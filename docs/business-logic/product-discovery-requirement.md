@@ -101,7 +101,6 @@ To maintain performance with large datasets, pagination must be calculated at th
 ### 5.2 Security Considerations
 1.  **SQL Injection:** Use `PreparedStatement` with placeholders (`?`) for all dynamic queries. **Never** concatenate strings into SQL.
 2.  **Input Sanitization:** Validate that `page` and `size` are positive integers to prevent unexpected behavior.
-3.  **XSS Prevention:** Ensure product names are properly escaped when rendered in the frontend to prevent script injection.
 
 ---
 

@@ -1,15 +1,3 @@
-// 🔐 Escape HTML (defensive - tránh future bug)
-function escapeHtml(input) {
-  if (!input) return "";
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;");
-}
-
 // 🧠 Normalize input
 function normalizePayload(payload) {
   const normalized = {};
@@ -73,14 +61,13 @@ document
       const json = await response.json();
 
       if (response.ok) {
-        // 🔐 Escape data từ server
-        const safeUsername = escapeHtml(json?.data?.username);
+        const username = json?.data?.username;
 
-        showAlert(`Thành công: Chào mừng ${safeUsername}!`, "success");
+        showAlert(`Thành công: Chào mừng ${username}!`, "success");
 
         form.reset();
       } else {
-        const errorMsg = escapeHtml(json?.message || "Đăng ký thất bại");
+        const errorMsg = json?.message || "Đăng ký thất bại";
 
         showAlert(`Lỗi (${json?.status || "?"}): ${errorMsg}`, "error");
       }

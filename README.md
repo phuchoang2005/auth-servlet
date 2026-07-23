@@ -72,9 +72,7 @@ graph TD
 > "Security is not an afterthought; it is a requirement."
 
 1.  **SQL Injection:** Strictly using `PreparedStatement` for all queries.
-2.  **XSS:** Output encoding on the frontend to prevent malicious script injection.
-3.  **CSRF:** Implementation of anti-CSRF tokens for sensitive state-changing requests.
-4.  **Sensitive Data:** Passwords salted and hashed before hitting the disk.
+2.  **Sensitive Data:** Passwords salted and hashed before hitting the disk.
 
 ---
 

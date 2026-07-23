@@ -1,18 +1,5 @@
 // login.js
 
-// 🔐 Escape HTML để tránh XSS
-function escapeHtml(input) {
-  if (!input) return "";
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;");
-}
-
-// 🔒 Render message an toàn
 function showMessage(msg) {
   const result = document.getElementById("result");
 
@@ -45,12 +32,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     const json = await response.json();
 
     if (response.ok) {
-      // 🔐 Escape dữ liệu server trả về
-      const safeUser = escapeHtml(json?.data?.username);
+      const user = json?.data?.username;
 
-      showMessage(`Đăng nhập thành công. Xin chào ${safeUser}`);
+      showMessage(`Đăng nhập thành công. Xin chào ${user}`);
     } else {
-      const errorMsg = escapeHtml(json?.message || "Đăng nhập thất bại");
+      const errorMsg = json?.message || "Đăng nhập thất bại";
 
       showMessage(`Lỗi: ${errorMsg}`);
     }
