@@ -16,22 +16,19 @@ public class DBConnectionutil {
     static {
         try {
             HikariConfig config = new HikariConfig();
-            // Cấu hình cơ bản
-            config.setJdbcUrl("jdbc:mysql://mysql:3306/ecommerce_new?useUnicode=true&characterEncoding=UTF-8");
-            config.setUsername("root");
-            config.setPassword("root123");
-            config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+            // Embedded, in-memory H2 in MySQL-compatibility mode.
+            // DB_CLOSE_DELAY=-1 keeps the in-memory DB alive for the JVM lifetime,
+            // even while HikariCP closes/reopens pooled connections.
+            config.setJdbcUrl("jdbc:h2:mem:ecommerce_new;MODE=MySQL;DB_CLOSE_DELAY=-1");
+            config.setUsername("sa");
+            config.setPassword("");
+            config.setDriverClassName("org.h2.Driver");
 
             // Cấu hình tối ưu hóa HikariCP (Chuẩn công nghiệp)
             config.setMaximumPoolSize(10); // Tối đa 10 kết nối trong hồ
             config.setMinimumIdle(5);      // Luôn giữ ít nhất 5 kết nối rảnh
             config.setIdleTimeout(300000); // 5 phút
             config.setConnectionTimeout(20000); // Đợi tối đa 20s để lấy kết nối
-
-            // Các tùy chỉnh hiệu năng cho MySQL
-            config.addDataSourceProperty("cachePrepStmts", "true");
-            config.addDataSourceProperty("prepStmtCacheSize", "250");
-            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
             dataSource = new HikariDataSource(config);
             logger.info("HikariCP DataSource đã được khởi tạo thành công.");

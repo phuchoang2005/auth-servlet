@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A learning-focused e-commerce backend built **from scratch on raw Jakarta Servlets** (no Spring), deployed as a WAR to Tomcat 10, backed by MySQL 8. The frontend is vanilla JS (Fetch/Ajax) served as JSPs. The explicit goal (see `README.md`) is to master the HTTP request/response lifecycle, JDBC, sessions, and filter chains manually before migrating to Spring Boot in a later phase.
+A learning-focused e-commerce backend built **from scratch on raw Jakarta Servlets** (no Spring), deployed as a WAR to Tomcat 10, backed by an **embedded in-memory H2 database** (running inside the Tomcat JVM, MySQL-compatibility mode). The frontend is vanilla JS (Fetch/Ajax) served as JSPs. The explicit goal (see `README.md`) is to master the HTTP request/response lifecycle, JDBC, sessions, and filter chains manually before migrating to Spring Boot in a later phase.
 
 Java 21. Package root: `org.phuchoang2005.ecommerce`. Note the Maven `artifactId` is `docker-servlet` and the WAR `finalName` is `docker-servlet`, so the build output is `target/docker-servlet.war`.
 
@@ -14,11 +14,13 @@ Java 21. Package root: `org.phuchoang2005.ecommerce`. Note the Maven `artifactId
 # Build the WAR (output: target/docker-servlet.war)
 mvn clean package
 
-# Full local stack (Tomcat + MySQL) via Colima/Docker
-cd docker/docker && ./start.sh      # colima start + docker compose up -d
-./build.sh                          # mvn clean package + docker restart tomcat-dev
-./stop.sh
+# Full local stack (Tomcat only; H2 is embedded) via Colima/Docker
+make dev        # mvn clean package + colima start + docker compose up -d
+make redeploy   # mvn clean package + docker restart tomcat-dev
+make down       # docker compose stop
 ```
+
+The `Makefile` at the repo root is the canonical entry point (`make help` lists targets). The older `docker/docker/*.sh` scripts still exist but the Makefile supersedes them.
 
 `docker/docker/docker-compose.yml` mounts `target/docker-servlet.war` into Tomcat as `ROOT.war` (so the app runs at context root `/`) and mounts `./logs` for log output. **After any Java change you must re-run `mvn clean package` and restart the `tomcat-dev` container** — `build.sh` does both.
 
@@ -41,18 +43,19 @@ Then the servlet runs.
 
 - **`TransactionFilter`** borrows one `Connection` from the HikariCP pool, sets `autoCommit(false)`, and stashes it in a **`ThreadLocal` (`DBContextUtil`)**. On normal completion it commits; on any `Throwable` it rolls back; in `finally` it closes the connection and clears the ThreadLocal.
 - **DAOs never open their own connection.** They call `DBContextUtil.getConnection()` to get the request-scoped transactional connection. If you write a new DAO, follow this pattern — do not call `DBConnectionutil.getConnection()` directly from a DAO (that borrows a fresh pool connection outside the transaction).
-- `DBConnectionutil` holds the single static HikariCP `DataSource`. **DB credentials and JDBC URL are hardcoded here** (`jdbc:mysql://mysql:3306/ecommerce_new`, `root`/`root123`) — note these do not match the env vars in `docker-compose.yml` (`app_db`/`app_user`), so the compose DB name/user is currently inconsistent with what the app connects to. Be aware when touching DB config.
+- `DBConnectionutil` holds the single static HikariCP `DataSource`. **The JDBC URL is hardcoded here**: `jdbc:h2:mem:ecommerce_new;MODE=MySQL;DB_CLOSE_DELAY=-1` (user `sa`, empty password). It is an **embedded in-memory H2** database — there is no separate DB container. `DB_CLOSE_DELAY=-1` keeps the in-memory DB alive for the JVM lifetime across pooled-connection open/close; `MODE=MySQL` keeps the SQL close to MySQL. **All data is wiped on every restart**, and the schema is re-created on startup (see below).
+- **Schema is created at startup by `SchemaInitListener`** (`@WebListener`), which runs `src/main/resources/db/schema.sql` (idempotent `CREATE ... IF NOT EXISTS`) via a raw pooled connection. `schema.sql` is the single source of truth for the DDL.
 
 ### Error handling
 
 - No controller/service wraps logic in try/catch for HTTP errors. They **throw**, and `GlobalExceptionFilter.handleException()` converts it to JSON.
 - All domain exceptions extend **`BaseException(int statusCode, String error, String message)`** (e.g. `ValidationException`, `AuthenticationException`, `DatabaseException`, `QueryException`, `DuplicateEntryDatabaseException`). `handleException` maps a `BaseException` to an `ApiErrorResponse` using its own status code; anything else becomes a 500 via `HttpStatusEnum.INTERNAL_ERROR`.
 - HTTP status codes/messages live in the **`HttpStatusEnum`** enum — use it rather than hardcoding integers.
-- MySQL duplicate-key errors (code `1062`) are translated in the DAO via `DuplicateFieldEnum.fromErrorMessage()` into a friendly `DuplicateEntryDatabaseException`.
+- Duplicate-key errors (H2 error code `23505`) are translated in the DAO via `DuplicateFieldEnum.fromErrorMessage()` (case-insensitive constraint-name match) into a friendly `DuplicateEntryDatabaseException`.
 
 ## Layering — one class per layer, per feature
 
-A feature is a vertical slice through: **Controller (Servlet) → Service → Repository → DAO → MySQL**.
+A feature is a vertical slice through: **Controller (Servlet) → Service → Repository → DAO → H2**.
 
 - **Controller** (`controller/`, extends `BaseServlet`): parses JSON, validates presence, calls the service, sends the response, manages session. `@WebServlet` maps the URL (e.g. `/auth/login`, `/auth/register`). Use the inherited helpers `parseJSON(request, DTO.class)`, `validateRequired(...)`, and `sendResponse(response, status, message, body)` — do not re-implement Gson serialization or response writing in servlets.
 - **Service** (`service/`): business logic, orchestration, returns `Optional<DTO>`. Instantiated with plain `new` (no DI container).

@@ -8,19 +8,5 @@ services:
       - ./../../target/docker-servlet.war:/usr/local/tomcat/webapps/ROOT.war
       - ./../../logs:/usr/local/tomcat/logs
     restart: no
-  mysql:
-    image: mysql:8.0
-    container_name: mysql-dev
-    restart: no
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: app_db
-      MYSQL_USER: app_user
-      MYSQL_PASSWORD: app_pass
-    volumes:
-      - mysql_data:/var/lib/mysql
-volumes:
-  mysql_data:
-
+  # The database is embedded, in-memory H2 running inside the Tomcat JVM
+  # (see DBConnectionutil). No separate DB container is needed.

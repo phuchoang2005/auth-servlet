@@ -66,7 +66,8 @@ public class UserDAO {
                 throw new QueryException(e.getMessage());
             }
         }catch(SQLException e){
-            if (e.getErrorCode() == 1062){
+            // 23505 = H2 DUPLICATE_KEY_1 (unique constraint violation)
+            if (e.getErrorCode() == 23505){
                 DuplicateFieldEnum field = DuplicateFieldEnum.fromErrorMessage(e.getMessage());
                 if (field != null){
                     throw new DuplicateEntryDatabaseException(field.getFriendlyName() + " existed");

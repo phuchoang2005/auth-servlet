@@ -16,8 +16,11 @@ public enum DuplicateFieldEnum {
     }
 
     public static DuplicateFieldEnum fromErrorMessage(String errorMessage) {
+        // Case-insensitive: H2 uppercases unquoted constraint names in its
+        // violation message (e.g. UK_PROFILE_EMAIL), while our names are lowercase.
+        String upper = errorMessage.toUpperCase();
         for (DuplicateFieldEnum field : values()) {
-            if (errorMessage.contains(field.constraintName)) {
+            if (upper.contains(field.constraintName.toUpperCase())) {
                 return field;
             }
         }
