@@ -1,25 +1,25 @@
-# 🛒 E-Commerce Evolution: From Servlet to Spring
+# 🔐 Auth on Raw Servlets — Login & Register
 
-> **A deep-dive learning journey.** This isn't just a shop; it's a transition from core Java Web fundamentals (Servlet/Ajax) to modern enterprise architecture (Spring Boot/React).
+> A learning-focused backend that implements **user registration and login** from scratch on
+> raw Jakarta Servlets (no Spring), with a vanilla JS + JSP/Ajax frontend. The goal is to master
+> the HTTP request/response lifecycle, JDBC, sessions, and filter chains by hand.
 
 ---
 
 ## 🎯 Project Vision
-The goal is to master the **Request-Response lifecycle** at its lowest level before moving into the "magic" of frameworks. By building this system, I demonstrate proficiency in:
+Master the **Request-Response lifecycle** at its lowest level — no framework "magic." This project
+implements exactly two flows, end to end: **register** and **login**.
 
 * **Low-level mastery:** Handling HTTP, Sessions, filter chains, and JDBC manually.
-* **Architectural evolution:** Migrating a monolithic Servlet app to a RESTful Spring Boot micro-service style.
 * **Professionalism:** Clean code, rigorous documentation, and security-first thinking.
 
-> **Current status:** Phase 1 is in progress. Only the **authentication slice — user registration
-> and login — is implemented end to end.** Catalog, cart, checkout, and admin features are on the
-> roadmap below but not yet built.
+> **Scope:** the only implemented endpoints are **`POST /auth/register`** and **`POST /auth/login`**.
+> Nothing else is built.
 
 ---
 
 ## 🛠 Technology Stack
 
-### Phase 1: The Foundations (Current)
 | Layer | Technology |
 | :--- | :--- |
 | **Frontend** | Vanilla JS + JSP/JSTL, **Ajax (Fetch API)** |
@@ -28,17 +28,12 @@ The goal is to master the **Request-Response lifecycle** at its lowest level bef
 | **Libraries** | Gson 2.8.9 (JSON), jbcrypt 0.4 (BCrypt), SLF4J 2.0.12 + Logback 1.5.13 |
 | **Build & Run** | Maven (WAR → `target/docker-servlet.war`), **Tomcat 10** (`tomcat:10-jdk21`), Docker Compose on **colima**, orchestrated via a `Makefile` |
 
-### Phase 2: The Modernization (Future)
-| Layer | Technology |
-| :--- | :--- |
-| **Frontend** | **React** or **Angular**, Tailwind CSS |
-| **Backend** | **Spring Boot**, Spring Security, Spring Data JPA |
-| **Auth** | JWT (JSON Web Tokens) |
-
 ---
 
 ## 🏗 System Architecture
-The project follows a strict **Layered Architecture** to ensure concerns are separated and the code remains testable. Every request also flows through a manually-ordered **filter chain** (exception handling → request tracing → CORS → security headers → auth → transaction) declared in `web.xml`.
+The project follows a strict **Layered Architecture** to keep concerns separated. Every request
+also flows through a manually-ordered **filter chain** (exception handling → request tracing → CORS
+→ security headers → auth → transaction) declared in `web.xml`.
 
 ```mermaid
 graph TD
@@ -66,7 +61,7 @@ graph TD
 * Verifies credentials against the BCrypt hash.
 * Establishes a role-based **`HttpSession`** (`Customer` / `Admin`).
 
-> These are the only two endpoints currently served. See the roadmap for what's next.
+> These are the only two endpoints served.
 
 ---
 
@@ -122,16 +117,6 @@ The app runs at context root `/` on http://localhost:8080. All data is in-memory
 ├── Makefile                 # Build/run entry point
 └── pom.xml                  # Maven dependencies
 ```
-
----
-
-## 📈 Roadmap to Fullstack
-* [x] **Phase 1a:** DB schema, filter chain, and auth servlets (register + login). ← *current*
-* [ ] **Phase 1b:** Product catalog (listing, filtering, live search, pagination).
-* [ ] **Phase 2:** Ajax-based Shopping Cart & Checkout.
-* [ ] **Phase 3:** Admin Dashboard (inventory + order management).
-* [ ] **Phase 4:** Refactor Backend to **Spring Boot**.
-* [ ] **Phase 5:** Rebuild Frontend in **React**.
 
 ---
 
