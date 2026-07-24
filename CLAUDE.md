@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A learning-focused e-commerce backend built **from scratch on raw Jakarta Servlets** (no Spring), deployed as a WAR to Tomcat 10, backed by an **embedded in-memory H2 database** (running inside the Tomcat JVM, MySQL-compatibility mode). The frontend is vanilla JS (Fetch/Ajax) served as JSPs. The explicit goal (see `README.md`) is to master the HTTP request/response lifecycle, JDBC, sessions, and filter chains manually before migrating to Spring Boot in a later phase.
 
+**Current scope: authentication only.** The only implemented features are **user registration (`POST /auth/register`) and login (`POST /auth/login`)** — see `LoginServlet`/`RegisterServlet`. Catalog, cart, checkout, and admin are roadmap items with no code yet. `schema.sql` does create scaffolding tables (`categories`, `products`, `orders`, `order_details`) for those future phases, but no DAO/service/servlet touches them; only `users` and `profiles` are used today.
+
 Java 21. Package root: `org.phuchoang2005.ecommerce`. Note the Maven `artifactId` is `docker-servlet` and the WAR `finalName` is `docker-servlet`, so the build output is `target/docker-servlet.war`.
 
 ## Build & run
@@ -34,7 +36,7 @@ Every request passes through a filter chain **whose order is defined by declarat
 2. **RequestTracingFilter** — sets up MDC/request-id logging context.
 3. **GlobalFilter** — CORS headers.
 4. **SecurityHeaderFilter** — security response headers.
-5. **AuthenticationFilter** — mapped **only to `/payment`**. Rejects the request (throws) unless `session.getAttribute("user")` is set.
+5. **AuthenticationFilter** — mapped **only to `/payment`**. Rejects the request (throws) unless `session.getAttribute("user")` is set. **Note: no `/payment` servlet exists yet**, so this filter is currently inert scaffolding — it never fires against a real endpoint.
 6. **TransactionFilter** — innermost before the servlet; owns the DB transaction (see below).
 
 Then the servlet runs.
@@ -66,15 +68,16 @@ A feature is a vertical slice through: **Controller (Servlet) → Service → Re
 ## Conventions
 
 - **Passwords**: BCrypt via `PasswordUtil` (jbcrypt). Never store or compare plaintext.
-- **Sessions**: `SessionUtils` for login/refresh; role-based (`Customer`/`Admin`). Auth for protected routes is enforced by `AuthenticationFilter`, not in servlets.
+- **Sessions**: `SessionUtils` for login/refresh; role-based (`Customer`/`Admin`). Auth for protected routes is enforced by `AuthenticationFilter` (not in servlets) — though no protected route (`/payment`) is implemented yet.
 - **Logging**: SLF4J + Logback (`src/main/resources/logback.xml`), logs to console + `logs/app.log` (rolling daily, 30-day/3GB cap). Convention is a `[LAYER]` prefix on messages (`[CONTROLLER]`, `[SERVICE]`, `[REPOSITORY]`, `[DAO]`, `[HTTP]`, `[FILTER-CHAIN]`). `MDCUtils` puts `username` into MDC; `FilterChainTracerUtil` records the filters a request traversed and logs the chain at the end. See `docs/logging/logging-standard.md`.
 
 ## Documentation
 
-`docs/` is authoritative for intended behavior and is kept in sync with code:
-- `docs/business-logic/*.md` — feature requirements (auth, register, user, admin, product-discovery).
-- `docs/database/database-design.md` — schema/ERD.
-- `docs/architecture/**/*.mermaid` — sequence diagrams per flow.
-- `docs/api/*.yaml` — OpenAPI-style request/response contracts.
+`docs/` is authoritative for intended behavior and is kept in sync with code. It currently covers only the implemented auth features (login + register):
+- `docs/business-logic/*.md` — feature requirements: `authentication-requirement.md`, `register-requirement.md`.
+- `docs/database/database-design.md` — schema/ERD for `users` + `profiles`.
+- `docs/architecture/*.mermaid` — sequence diagrams: `login-sequence-diagram.mermaid`, `register-sequence-diagram.mermaid`.
+- `docs/api/*.yaml` — OpenAPI-style contracts: `auth-api.yaml` (`/auth/login`), `register-api.yaml` (`/auth/register`).
+- `docs/logging/logging-standard.md` — cross-cutting logging conventions.
 
 When implementing a feature, read the matching `business-logic` doc and `api` yaml first; when changing behavior, update them alongside the code.

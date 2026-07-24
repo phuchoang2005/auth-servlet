@@ -44,7 +44,7 @@ The system must perform an asynchronous check for:
     * Set response content type to `application/json`.
     * Extract parameters.
     * Validate data (Server-side validation is mandatory even with Frontend validation).
-    * Interact with **DAO (Data Access Object)** to save the user to the Database (MySQL/PostgreSQL).
+    * Interact with **DAO (Data Access Object)** to save the user to the Database (embedded H2, MySQL-compatibility mode).
 4.  **Response:** Servlet returns a JSON response (e.g., `{"status": "success", "message": "User registered successfully"}`).
 5.  **UI Update:** JavaScript receives the JSON and updates the DOM to show a success message or specific error labels.
 
