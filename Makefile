@@ -29,6 +29,7 @@ redeploy: build ## Rebuild the WAR and restart Tomcat to pick it up
 
 down: ## Stop the containers
 	$(COMPOSE) stop
+	colima stop
 stop: down ## Alias for `down`
 
 halt: down ## Stop the containers and the colima VM
